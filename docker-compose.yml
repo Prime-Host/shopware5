@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: ${P_DOMAIN}-db
+    domainname: ${P_DOMAIN}-db
+    hostname: ${P_DOMAIN}-db
+    restart: always
+    volumes:
+       - /var/docker/container/${P_DOMAIN}/mariadb/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${P_PASSWORD}
+      MYSQL_DATABASE: shopware
+      TZ: "Europe/Berlin"
+
+  nginx:
+    image: primehost/shopware5:nginx
+    container_name: ${P_DOMAIN}-nginx
+    hostname: ${P_DOMAIN}-nginx
+    volumes:
+      - /var/docker/container/${P_DOMAIN}/html:/var/www/html
+    environment:
+      PRIMEHOST_USER: ${P_USER}
+      PRIMEHOST_PASSWORD: ${P_PASSWORD}
+      PRIMEHOST_DOMAIN: ${P_DOMAIN}
+      TZ: "Europe/Berlin"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${P_ROUTER}.tls.certresolver=le
+      - traefik.http.routers.${P_ROUTER}.entrypoints=websecure
+      - traefik.http.services.${P_ROUTER}.loadbalancer.server.port=80
+      - traefik.http.routers.${P_ROUTER}.rule=Host(`${P_DOMAIN}`${P_EXTRA_DOMAIN})
+
+  php:
+    image: primehost/shopware5:php${P_PHP}
+    container_name: ${P_DOMAIN}-php
+    hostname: ${P_DOMAIN}-php
+    ports:
+      - "${P_PORT}:22"
+    volumes:
+      - /var/docker/container/${P_DOMAIN}/home:/home
+      - /var/docker/container/${P_DOMAIN}/html:/var/www/html
+    environment:
+      PRIMEHOST_USER: ${P_USER}
+      PRIMEHOST_PASSWORD: ${P_PASSWORD}
+      PRIMEHOST_DOMAIN: ${P_DOMAIN}
+      TZ: "Europe/Berlin"
+
+networks:
+  default:
+    external:
+      name: web
+
