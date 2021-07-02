@@ -1,4 +1,4 @@
-FROM php:7.2-fpm
+FROM php:7.4-fpm
 MAINTAINER Nordloh <info@nordloh-webdesign.de>
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -18,11 +18,18 @@ RUN apt-get update \
     libpng-dev \ 
     libxslt1-dev \ 
     libpq-dev \
-    sudo
+    libonig-dev \
+    libzip-dev \
+    sudo \
+    jpegoptim \
+    optipng \
+    pngquant \
+    libmagickwand-dev \
+  && pecl install apcu imagick
 
 # Configure the gd library
 RUN docker-php-ext-configure \
-  gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
+  gd --with-freetype --with-jpeg
 
 # Install required PHP extensions
 
@@ -41,6 +48,12 @@ RUN docker-php-ext-install \
   bcmath \ 
   pcntl \ 
   sockets 
+
+# Install opcache & enable apcu, imagick
+RUN docker-php-ext-configure opcache --enable-opcache \
+    && docker-php-ext-install opcache \
+    && docker-php-ext-enable apcu imagick \
+    && rm -r /var/lib/apt/lists/*
 
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
