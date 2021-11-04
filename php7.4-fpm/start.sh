@@ -22,6 +22,18 @@ if [ ! -f /home/$PRIMEHOST_USER/backup ]; then
     mkdir /home/$PRIMEHOST_USER/backup
 fi
 
+# insert cronjob
+if [ ! -f /var/spool/cron/crontabs/$PRIMEHOST_USER ]; then
+sudo -u $PRIMEHOST_USER bash << EOF
+crontab -l | { cat; echo "TZ=Europe/Berlin
+SHELL=/bin/bash
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+
+0 * * * * cd /var/www/html && bin/console bin/console sw:cron:run
+55 * * * * wget -q https://lachskontor.de/backend/Newsletter/cron"; } | crontab -
+EOF
+fi
+
 unset PRIMEHOST_USER PRIMEHOST_PASSWORD PRIMEHOST_DOMAIN
 
 # start all the services
